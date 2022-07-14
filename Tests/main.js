@@ -3,23 +3,28 @@ window.onload = function main() {
     var canvas = document.getElementById('my_Canvas');
     gl = canvas.getContext('webgl');
     var faceCubeSize=256;
-    var planetOrbitRadius = 3;
+    var planet1OrbitRadius = 4;
+    var planet2OrbitRadius = 8;
 
     /*========== Defining and storing the geometry ==========*/
     // Create programs
-    var skyboxProgram = webglUtils.createProgramInfo( gl, ["skybox-vertex-shader", "skybox-fragment-shader"]);
-    var shaderProgram = webglUtils.createProgramInfo(gl, ["vertex-shader", "fragment-shader"]);
+    var skyboxProgram = webglUtils.createProgramInfo(gl, ["skybox-vertex-shader", "skybox-fragment-shader"]);
+    var planetProgram = webglUtils.createProgramInfo(gl, ["planet-vertex-shader", "planet-fragment-shader"]);
+    var sunProgram = webglUtils.createProgramInfo(gl, ["sun-vertex-shader", "sun-fragment-shader"]);
 
     // Create Skybox buffer and fill with data
     const skyboxData = createXYQuadVertices.apply(null,  Array.prototype.slice.call(arguments, 1));
     const skyboxInfo = webglUtils.createBufferInfoFromArrays(gl, skyboxData);
 
     // Create planet buffer and fill with data
-    const planetData = createSphereVertices.apply(null,  Array.prototype.slice.call(arguments, 1));
-    const planetInfo = webglUtils.createBufferInfoFromArrays(gl, planetData);
+    const sphereData = createSphereVertices.apply(null,  Array.prototype.slice.call(arguments, 1));
+    const sphereInfo = webglUtils.createBufferInfoFromArrays(gl, sphereData);
     
     // Texture definition
     const planetTexture = loadPlanetTexture(gl, document, faceCubeSize);
+    const planetTexture2 = loadPlanetTexture(gl, document, faceCubeSize);
+    
+    const sunTexture = loadSunTexture(gl);
     const skyboxTexture = loadSkyboxTexture(gl);
     
 
@@ -38,7 +43,7 @@ window.onload = function main() {
     //console.log(proj_matrix);
 
     //usa libreria m4.js per definire view_matrix
-        var THETA=0, PHI=0, D=10;
+        var THETA=0, PHI=0, D=14;
     
     // temporary mov matrix definition
     /*================= Mouse events ======================*/
@@ -74,14 +79,18 @@ window.onload = function main() {
     
 
     /*=================== Drawing =================== */
-    //var THETA=0, PHI=0;
     var time_old=0;
     var orbitAngle1 = 0;
+    var orbitAngle2 = 0;
     var rotationAngle1 = 0;
+    var rotationAngle2 = 0;
     var orbitSpeed1 = 0.01;
+    var orbitSpeed2 = 0.005;
     var rotationSpeed1 = 0.05;
+    var rotationSpeed2 = 0.02;
     var orbitDirection1 = 1;  // 1 or -1
-    var lightPosition = [0,0,0];
+    var orbitDirection2 = -1;
+    var sunlightPosition = [0,0,0];
 
     var render=function(time) {
 
@@ -115,7 +124,7 @@ window.onload = function main() {
         }
     }
 
-    //usa libreria m4.js per definire le rotazioni
+    // Movement of first planet
     var mo_matrix=[];
     m4.identity(mo_matrix);
     var planetAngles = updatePlanetAngles(orbitAngle1, orbitSpeed1, rotationAngle1, rotationSpeed1);
@@ -123,13 +132,11 @@ window.onload = function main() {
     rotationAngle1 = planetAngles.rotationAngle;
     
     mo_matrix=m4.translate(mo_matrix, 
-        planetOrbitRadius*Math.cos(degToRad(orbitDirection1*orbitAngle1)) , 
+        planet1OrbitRadius*Math.cos(degToRad(orbitDirection1*orbitAngle1)) , 
         0, 
-        planetOrbitRadius*Math.sin(degToRad(orbitDirection1*orbitAngle1)));
+        planet1OrbitRadius*Math.sin(degToRad(orbitDirection1*orbitAngle1)));
     
     mo_matrix=m4.yRotate(mo_matrix, degToRad(rotationAngle1)); // Rotate the planet
-
-
 
     var u_worldInverseTransposeMatrix = m4.transpose(m4.inverse(mo_matrix));
 
@@ -158,6 +165,8 @@ window.onload = function main() {
     gl.viewport(0.0, 0.0, canvas.width, canvas.height); 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    
+    /*============ Draw Skybox ============*/
     gl.useProgram(skyboxProgram.program);
 
     webglUtils.setBuffersAndAttributes(gl, skyboxProgram, skyboxInfo);
@@ -167,20 +176,42 @@ window.onload = function main() {
     });
     webglUtils.drawBufferInfo(gl, skyboxInfo);
 
+    /*============ Draw Planet 1 ============*/
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, planetTexture);
 
-    gl.useProgram(shaderProgram.program);  
+    gl.useProgram(planetProgram.program);  
 
-    webglUtils.setBuffersAndAttributes(gl, shaderProgram, planetInfo);
-    webglUtils.setUniforms(shaderProgram, {
+    webglUtils.setBuffersAndAttributes(gl, planetProgram, sphereInfo);
+    webglUtils.setUniforms(planetProgram, {
       u_projection: proj_matrix,
       u_view: view_matrix,
       u_world: mo_matrix,
-      u_lightWorldPosition: lightPosition,
+      u_lightWorldPosition: sunlightPosition,
       u_worldInverseTransposeMatrix: u_worldInverseTransposeMatrix, 
       u_texture: planetTexture,
     });
-    webglUtils.drawBufferInfo(gl, planetInfo);
+    webglUtils.drawBufferInfo(gl, sphereInfo);
+
+    /*============ Draw Sun ============*/
+    gl.bindTexture(gl.TEXTURE_2D, sunTexture);
+
+    gl.useProgram(sunProgram.program);
+
+    //Reset mo_matrix
+    mo_matrix = [];
+    mo_matrix = m4.identity(mo_matrix);
+    mo_matrix = m4.scale(mo_matrix, 1.5, 1.5, 1.5);
+    //mo_matrix = m4.translate(mo_matrix, 0, 0, -2);
+
+    webglUtils.setBuffersAndAttributes(gl, sunProgram, sphereInfo);
+    webglUtils.setUniforms(sunProgram, {
+      u_projection: proj_matrix,
+      u_view: view_matrix,
+      u_world: mo_matrix,
+      u_texture: sunTexture,
+    });
+    webglUtils.drawBufferInfo(gl, sphereInfo);
+
 
     window.requestAnimationFrame(render); 
     }

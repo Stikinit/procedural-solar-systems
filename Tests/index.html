@@ -18,9 +18,47 @@
    </head>
 <body>
 
-<canvas width="720" height="576" id="my_Canvas"></canvas>
+<canvas width="1280" height="720" id="my_Canvas"></canvas>
 
-<script id="vertex-shader" type="x-shader/x-vertex">
+<script id="sun-vertex-shader" type="x-shader/x-vertex">
+
+    float PI = 3.141592653589793;
+    float TWOPI = 6.283185307179587;
+    
+    attribute vec3 a_position;
+    attribute vec2 a_texcoord;
+
+    uniform mat4 u_projection;  // projection matrix
+    uniform mat4 u_view;        // view matrix
+    uniform mat4 u_world;       // movement matrix
+    
+    varying vec2 v_texcoord;
+
+
+    void main(void) {
+        vec4 surfaceWorldPosition = u_world * vec4(a_position, 1.);
+        gl_Position = u_projection * u_view * surfaceWorldPosition;
+
+        v_texcoord = a_texcoord;
+    }
+</script>
+
+<script id="sun-fragment-shader" type="x-shader/x-fragment">
+    precision mediump float; 
+    
+    // Passed in from the vertex shader.
+    varying vec2 v_texcoord;
+
+    // The texture.
+    uniform sampler2D u_texture;
+
+    void main(void) {
+        vec4 tex = texture2D( u_texture, v_texcoord );
+        gl_FragColor = vec4(tex.r, tex.g, tex.b, tex.a);
+    }
+</script>
+
+<script id="planet-vertex-shader" type="x-shader/x-vertex">
 
     float PI = 3.141592653589793;
     float TWOPI = 6.283185307179587;
@@ -51,7 +89,7 @@
     }
 </script>
 
-<script id="fragment-shader" type="x-shader/x-fragment">
+<script id="planet-fragment-shader" type="x-shader/x-fragment">
     precision mediump float; 
     
     // Passed in from the vertex shader.
@@ -75,6 +113,7 @@
     }
 
     void main(void) {
+
         vec3 normal = normalize(v_normal);
 
         vec3 surfaceToLightDirection = normalize(v_surfaceToLight);
@@ -115,8 +154,11 @@ void main() {
 
 <script type="text/javascript" src="resources/webgl-utils.js"></script>
 <script type="text/javascript" src="resources/shapes_utils.js"></script>
+<script type="text/javascript" src="../TextureGen/simplex-noise.js"></script>
 <script type="text/javascript" src="resources/texture_loader.js"></script>
 <script type="text/javascript" src="resources/m4.js"></script>
+<script type="text/javascript" src="../TextureGen/chroma.min.js"></script>
+<script type="text/javascript" src="../TextureGen/TextureGenerator.js"></script>
 <script type="text/javascript" src="main.js"></script>
 </body>
 </html>  

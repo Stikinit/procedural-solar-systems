@@ -9,9 +9,20 @@ mc.height = cubeFaceSize*3;
 mc.width = cubeFaceSize*4;
 
 /*=============== Noise Parameters ==============*/
-var scale = 0.2; //   ]0, 1]  gets the best results
+var scale = 0.5; //   ]0, 1]  gets the best results
 var num_octaves = 6;
 /*===============================================*/
+
+/*==== Generate random color palette using chroma.js ====*/
+var num_thresholds = Math.floor(Math.random() * (11 - 3) + 3);
+console.log(num_thresholds);
+var distinct = false;
+var colors = [];
+for(var c=0; c<num_thresholds; c++) {
+    colors.push(chroma.random());
+}
+var colorScale = distinct ? chroma.scale(colors).classes(num_thresholds) : chroma.scale(colors);
+/*=======================================*/
 
 // Creating noise generators
 let generators = [];
@@ -25,8 +36,9 @@ function noise(nx, ny, nz, gen_num) {
     return generators[gen_num-1].noise3D(nx / scale, ny / scale, nz / scale) / 2 + 0.5;
 }  
 
-function colorPixel(v, x, y) {
-    var color = "rgba("+v*255+","+v*255+","+v*255+"," + 255 + ")";
+function colorPixel(h, x, y) {
+    //var color = "rgba("+h*255+","+h*255+","+h*255+"," + 255 + ")";
+    var color = getColorFromHeight(h);
     ctx.fillStyle = color;
     ctx.fillRect(x,y,1,1);
 }
@@ -108,11 +120,17 @@ function cubeMapNoiseGenerator(cubeFaceSize) {
     }
 }
 
+function getColorFromHeight(h) {
+    return colorScale(h);
+}
+
 ctx.clearRect(0,0,cubeFaceSize*4,cubeFaceSize*3);
 cubeMapNoiseGenerator(cubeFaceSize);
 
 var img = new Image();
 img.src = mc.toDataURL('image/png');
+
+//console.log(getColorFromHeight(0.5));
 
 
 

@@ -12,8 +12,9 @@ function loadPlanetTexture(gl, document, faceCubeSize) {
     ctx.canvas.width = faceCubeSize;
     ctx.canvas.height = faceCubeSize;
 
-    var image = new Image();
-    image.src = '../TextureGen/earth.png';
+    //var image = new Image();
+    //image.src = '../TextureGen/earth.png';
+    var image = generateCubeMapTexture(faceCubeSize, 0.5);
 
     const faceInfosPlanet = [
         { target: gl.TEXTURE_CUBE_MAP_POSITIVE_X, sx: 512, sy: 256, sWidth: 256, sHeight: 256, dx: 0, dy: 0, dWidth: 256, dHeight: 256 },
@@ -104,4 +105,32 @@ function loadSkyboxTexture(gl) {
     gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 
     return skyboxTexture;
+}
+
+function loadSunTexture(gl) {
+  const sunTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, sunTexture);
+
+  const image = new Image();
+  image.src = '../../TextureGen/sun.jpg';
+
+  const target = gl.TEXTURE_2D;
+  const level = 0;
+  const internalFormat = gl.RGBA;
+  const width = 1024;
+  const height = 512;
+  const format = gl.RGBA;
+  const type = gl.UNSIGNED_BYTE;
+
+  // setup texture so it's immediately renderable
+  gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
+
+  image.addEventListener('load', function() {
+    gl.bindTexture(gl.TEXTURE_2D, sunTexture);
+    gl.texImage2D(target, level, internalFormat, format, type, image);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  });
+
+  return sunTexture;
 }

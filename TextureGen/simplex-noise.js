@@ -53,7 +53,7 @@ const grad4 = new Float32Array([0, 1, 1, 1, 0, 1, 1, -1, 0, 1, -1, 1, 0, 1, -1, 
     1, 1, 1, 0, 1, 1, -1, 0, 1, -1, 1, 0, 1, -1, -1, 0,
     -1, 1, 1, 0, -1, 1, -1, 0, -1, -1, 1, 0, -1, -1, -1, 0]);
 /** Deterministic simplex noise generator suitable for 2D, 3D and 4D spaces. */
-export class SimplexNoise {
+class SimplexNoise {
     /**
      * Creates a new `SimplexNoise` instance.
      * This involves some setup. You can save a few cpu cycles by reusing the same instance.
@@ -415,14 +415,14 @@ export class SimplexNoise {
         return 27.0 * (n0 + n1 + n2 + n3 + n4);
     }
 }
-export default SimplexNoise;
+//export default SimplexNoise;
 /**
  * Builds a random permutation table.
  * This is exported only for (internal) testing purposes.
  * Do not rely on this export.
  * @private
  */
-export function buildPermutationTable(random) {
+function buildPermutationTable(random) {
     const p = new Uint8Array(256);
     for (let i = 0; i < 256; i++) {
         p[i] = i;
