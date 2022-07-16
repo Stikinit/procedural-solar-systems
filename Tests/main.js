@@ -133,7 +133,11 @@ window.onload = function main() {
                   controls.D*Math.sin(PHI)*Math.sin(THETA),
                   controls.D*Math.cos(PHI)];
     //    console.log(camera);
+
     var target = [0, 0, 0];
+    if (controls.targetShip) {
+        target = [2,0,2]; //TEMPORARY
+    }
     var up = [0, 1, 0];
     var view_matrix = m4.inverse(m4.lookAt(camera, target, up));
     //    console.log(view_matrix);
@@ -237,7 +241,6 @@ window.onload = function main() {
     mo_matrix = [];
     mo_matrix = m4.identity(mo_matrix);
     mo_matrix = m4.scale(mo_matrix, 1.5, 1.5, 1.5);
-    //mo_matrix = m4.translate(mo_matrix, 0, 0, -2);
 
     webglUtils.setBuffersAndAttributes(gl, sunProgram, sphereInfo);
     webglUtils.setUniforms(sunProgram, {
@@ -247,6 +250,36 @@ window.onload = function main() {
       u_texture: sunTexture,
     });
     webglUtils.drawBufferInfo(gl, sphereInfo);
+
+    /*========== Draw Starship =========*/
+    gl.bindTexture(gl.TEXTURE_2D, starshipTexture);
+
+    gl.useProgram(starshipProgram.program);
+
+    //Reset mo_matrix
+    mo_matrix = [];
+    mo_matrix = m4.identity(mo_matrix);
+    mo_matrix = m4.translate(mo_matrix, 2,0,2);
+    mo_matrix = m4.scale(mo_matrix, 0.3,0.3,0.3);
+
+    webglUtils.setBuffersAndAttributes(gl, starshipProgram, starshipInfo);
+    webglUtils.setUniforms(starshipProgram, {
+      u_projection: proj_matrix,
+      u_view: view_matrix,
+      u_world: mo_matrix,
+      u_viewWorldPosition: camera,
+      diffuse: meshData.parameters.diffuse,
+      ambient: meshData.parameters.ambient,
+      emissive: meshData.parameters.emissive,
+      specular: meshData.parameters.specular,
+      shininess: meshData.parameters.shininess,
+      opacity: meshData.parameters.opacity,
+      u_lightDirection: sunlightPosition,
+      u_ambientLight: [0, 0, 0],
+      u_diffuseMap: starshipTexture,
+    });
+    webglUtils.drawBufferInfo(gl, starshipInfo);
+
 
 
     window.requestAnimationFrame(render); 
@@ -264,7 +297,8 @@ var controls = {
     orbitSpeed2 : 0.005,
     rotationSpeed1 : 0.05,
     rotationSpeed2 : 0.02,
-    D: 10
+    D: 10,
+    targetShip: false,
 }
 
 function define_gui(){
@@ -284,6 +318,7 @@ function define_gui(){
         render(0);});
     gui.add(controls,"D").min(0).max(20).step(1).listen().onChange(function() {
         render(0);});
+    gui.add(controls, "targetShip");
 }
 
 

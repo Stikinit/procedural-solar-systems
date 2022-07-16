@@ -153,28 +153,32 @@ void main() {
 </script>
 
 <script id="ship-vertex-shader" type="x-shader/x-vertex">
-    attribute vec4 a_position;
+    attribute vec3 a_position;
     attribute vec3 a_normal;
     attribute vec2 a_texcoord;
-    attribute vec4 a_color;
   
     uniform mat4 u_projection;
     uniform mat4 u_view;
     uniform mat4 u_world;
     uniform vec3 u_viewWorldPosition;
+    uniform vec3 u_lightDirection;
   
     varying vec3 v_normal;
     varying vec3 v_surfaceToView;
+    varying vec3 v_surfaceToLight;
     varying vec2 v_texcoord;
-    varying vec4 v_color;
+    varying vec3 v_lightDirection;
   
     void main() {
-      vec4 worldPosition = u_world * a_position;
-      gl_Position = u_projection * u_view * worldPosition;
-      v_surfaceToView = u_viewWorldPosition - worldPosition.xyz;
+      vec4 surfaceWorldPosition = u_world * vec4(a_position, 1.);
+      gl_Position = u_projection * u_view * surfaceWorldPosition;
+      
+      v_surfaceToView = u_viewWorldPosition - surfaceWorldPosition.xyz;
+      v_surfaceToLight = u_lightDirection - surfaceWorldPosition.xyz;
+      
       v_normal = mat3(u_world) * a_normal;
       v_texcoord = a_texcoord;
-      v_color = a_color;
+      v_lightDirection = u_lightDirection;
     }
   </script>
   <!-- fragment shader -->
@@ -183,8 +187,9 @@ void main() {
   
     varying vec3 v_normal;
     varying vec3 v_surfaceToView;
+    varying vec3 v_surfaceToLight;
     varying vec2 v_texcoord;
-    varying vec4 v_color;
+    varying vec3 v_lightDirection;
   
     uniform vec3 diffuse;
     uniform vec3 ambient;
@@ -192,7 +197,6 @@ void main() {
     uniform vec3 specular;
     uniform float shininess;
     uniform float opacity;
-    uniform vec3 u_lightDirection;
     uniform vec3 u_ambientLight;
     uniform sampler2D diffuseMap;
   
@@ -200,14 +204,16 @@ void main() {
       vec3 normal = normalize(v_normal);
   
       vec3 surfaceToViewDirection = normalize(v_surfaceToView);
-      vec3 halfVector = normalize(u_lightDirection + surfaceToViewDirection);
+      vec3 surfaceToLightDirection = normalize(v_surfaceToLight);
+
+      vec3 halfVector = normalize(v_lightDirection + surfaceToViewDirection);
   
-      float light = dot(u_lightDirection, normal); //* .5 + .5;
+      float light = dot(normal, surfaceToLightDirection)*4.0; //Make the light more powerful
       float specularLight = clamp(dot(normal, halfVector), 0.0, 1.0);
   
       vec4 diffuseMapColor = texture2D(diffuseMap, v_texcoord);
-      vec3 effectiveDiffuse = diffuse * diffuseMapColor.rgb * v_color.rgb;
-      float effectiveOpacity = opacity * diffuseMapColor.a * v_color.a;
+      vec3 effectiveDiffuse = diffuse * diffuseMapColor.rgb; //* v_color.rgb;
+      float effectiveOpacity = opacity * diffuseMapColor.a; //* v_color.a;
   
       gl_FragColor = vec4(
           emissive +
