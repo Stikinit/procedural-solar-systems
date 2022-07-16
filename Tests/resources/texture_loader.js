@@ -58,19 +58,19 @@ function loadSkyboxTexture(gl) {
     const faceInfos = [
       {
         target: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
-        url: '../skybox/left.png',
-      },
-      {
-        target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
         url: '../skybox/right.png',
       },
       {
+        target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+        url: '../skybox/left.png',
+      },
+      {
         target: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
-        url: '../skybox/top.png',
+        url: '../skybox/bottom.png',
       },
       {
         target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
-        url: '../skybox/bottom.png',
+        url: '../skybox/top.png',
       },
       {
         target: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
