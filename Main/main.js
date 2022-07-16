@@ -1,8 +1,12 @@
 window.onload = function main() { 
-    /*============= Creating a canvas ======================*/ 
-    var canvas = document.getElementById('my_Canvas');
+    /*============= Creating a 3d canvas and an overlay canvas ======================*/
+    var canvas = document.querySelector('#my_Canvas');
     gl = canvas.getContext('webgl');
     var faceCubeSize=256;
+
+    var overlay_canvas = document.querySelector("#overlay_Canvas") 
+    var ctx = overlay_canvas.getContext("2d");
+    ctx.fillStyle = "rgba(255,255,255,0)"; // Transparent canvas  
 
     /*========== Defining and storing the geometry ==========*/
     // Create programs
@@ -84,50 +88,73 @@ window.onload = function main() {
     };
 
     function doKeyDown(e){
-        //====================
-        // THE W KEY
-        //====================
-        if (e.keyCode == 87) key[0]=true;
-        //====================
-        // THE S KEY
-        //====================
-        if (e.keyCode == 83) key[2]=true;
-        //====================
-        // THE A KEY
-        //====================
-        if (e.keyCode == 65) key[1]=true;
-        //====================
-        // THE D KEY
-        //====================
-        if (e.keyCode == 68) key[3]=true;
+        console.log('down');
+        if (e.keyCode == 87) key[0]=true; //W
+        if (e.keyCode == 83) key[2]=true; //S
+        if (e.keyCode == 65) key[1]=true; //A
+        if (e.keyCode == 68) key[3]=true; //D
+        if (e.keyCode == 38) key[6]=true; //Arrow up
+        if (e.keyCode == 40) key[7]=true; //Arrow down
+        if (e.keyCode == 37) key[8]=true; //Arrow left
+        if (e.keyCode == 39) key[9]=true; //Arrow right
     }
     function doKeyUp(e){
-        //====================
-        // THE W KEY
-        //====================
-        if (e.keyCode == 87) key[0]=false;
-        //====================
-        // THE S KEY
-        //====================
-        if (e.keyCode == 83) key[2]=false;
-        //====================
-        // THE A KEY
-        //====================
-        if (e.keyCode == 65) key[1]=false;
-        //====================
-        // THE D KEY
-        //====================
-        if (e.keyCode == 68) key[3]=false;
+        console.log('up');
+        if (e.keyCode == 87) key[0]=false; //W
+        if (e.keyCode == 83) key[2]=false; //S
+        if (e.keyCode == 65) key[1]=false; //A
+        if (e.keyCode == 68) key[3]=false; //D
+        if (e.keyCode == 38) key[6]=false; //Arrow up
+        if (e.keyCode == 40) key[7]=false; //Arrow down
+        if (e.keyCode == 37) key[8]=false; //Arrow left
+        if (e.keyCode == 39) key[9]=false; //Arrow right
     }
 
-    canvas.onmousedown=mouseDown;
-    canvas.onmouseup=mouseUp;
-    canvas.mouseout=mouseUp;
-    canvas.onmousemove=mouseMove;
+    function doTouch(evt) {
+        for(var i=0; i<evt.touches.length; i++) {
+            var e = evt.touches[i];
+            if (e.clientX >= ctx.canvas.width*1/9 && e.clientX <= ctx.canvas.width*2/9 && e.clientY >= ctx.canvas.height/2 && e.clientY <= ctx.canvas.height*4/6) key[0]=true; //W
+            if (e.clientX >= ctx.canvas.width*1/9 && e.clientX <= ctx.canvas.width*2/9 && e.clientY >= ctx.canvas.height*5/6 && e.clientY <= ctx.canvas.height) key[2]=true; //S
+            if (e.clientX >= 0 && e.clientX <= ctx.canvas.width*1/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[1]=true; //A
+            if (e.clientX >= ctx.canvas.width*2/9 && e.clientX <= ctx.canvas.width*3/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[3]=true; //D
+
+            if (e.clientX >= ctx.canvas.width*7/9 && e.clientX <= ctx.canvas.width*8/9 && e.clientY >= ctx.canvas.height/2 && e.clientY <= ctx.canvas.height*4/6) key[6]=true; //Arrow up
+            if (e.clientX >= ctx.canvas.width*7/9 && e.clientX <= ctx.canvas.width*8/9 && e.clientY >= ctx.canvas.height*5/6 && e.clientY <= ctx.canvas.height) key[7]=true; //Arrow down
+            if (e.clientX >= ctx.canvas.width*6/9 && e.clientX <= ctx.canvas.width*7/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[8]=true; //Arrow left
+            if (e.clientX >= ctx.canvas.width*8/9 && e.clientX <= ctx.canvas.width && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[9]=true; //Arrow right
+        }
+    }
+
+    function doEndTouch(evt) {
+        for(var i=0; i<evt.changedTouches.length; i++) {
+            var e = evt.changedTouches[i];
+            if (e.clientX >= ctx.canvas.width*1/9 && e.clientX <= ctx.canvas.width*2/9 && e.clientY >= ctx.canvas.height/2 && e.clientY <= ctx.canvas.height*4/6) key[0]=false; //W
+            if (e.clientX >= ctx.canvas.width*1/9 && e.clientX <= ctx.canvas.width*2/9 && e.clientY >= ctx.canvas.height*5/6 && e.clientY <= ctx.canvas.height) key[2]=false; //S
+            if (e.clientX >= 0 && e.clientX <= ctx.canvas.width*1/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[1]=false; //A
+            if (e.clientX >= ctx.canvas.width*2/9 && e.clientX <= ctx.canvas.width*3/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[3]=false; //D
+
+            if (e.clientX >= ctx.canvas.width*7/9 && e.clientX <= ctx.canvas.width*8/9 && e.clientY >= ctx.canvas.height/2 && e.clientY <= ctx.canvas.height*4/6) key[6]=false; //Arrow up
+            if (e.clientX >= ctx.canvas.width*7/9 && e.clientX <= ctx.canvas.width*8/9 && e.clientY >= ctx.canvas.height*5/6 && e.clientY <= ctx.canvas.height) key[7]=false; //Arrow down
+            if (e.clientX >= ctx.canvas.width*6/9 && e.clientX <= ctx.canvas.width*7/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[8]=false; //Arrow left
+            if (e.clientX >= ctx.canvas.width*8/9 && e.clientX <= ctx.canvas.width && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[9]=false; //Arrow right
+        }
+    }
+
+    //We don't want to trigger scrolling of any type
+    window.addEventListener("keydown", function(e) {
+        if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+            e.preventDefault();
+        }
+    }, false);
+
+    overlay_canvas.onmousedown=mouseDown;
+    overlay_canvas.onmouseup=mouseUp;
+    overlay_canvas.mouseout=mouseUp;
+    overlay_canvas.onmousemove=mouseMove;
     window.addEventListener('keydown', doKeyDown, true);
     window.addEventListener('keyup', doKeyUp, true);
-
-    
+    overlay_canvas.addEventListener('touchstart', doTouch, true);
+    overlay_canvas.addEventListener('touchend', doEndTouch, true);
 
     /*=================== Drawing =================== */
     var time_old=0;
@@ -178,9 +205,9 @@ window.onload = function main() {
                         controls.D*Math.cos(PHI) + shipParams.dynamic.pz];
     }
     else {
-        var camera = [0.8*Math.sin(degToRad(shipParams.dynamic.facing)) + shipParams.dynamic.px, // Follow the ship
-                        0.2 + shipParams.dynamic.py,
-                        0.8*Math.cos(degToRad(shipParams.dynamic.facing)) + shipParams.dynamic.pz];
+        var camera = [0.4*Math.sin(degToRad(shipParams.dynamic.yaw)) + shipParams.dynamic.px, // Follow the ship
+                        0.1 + shipParams.dynamic.py,
+                        0.4*Math.cos(degToRad(shipParams.dynamic.yaw)) + shipParams.dynamic.pz];
     }
 
     var target = [shipParams.dynamic.px, shipParams.dynamic.py, shipParams.dynamic.pz]; // Target the ship
@@ -315,8 +342,8 @@ window.onload = function main() {
     mo_matrix = [];
     mo_matrix = m4.identity(mo_matrix);
     mo_matrix=m4.translate(mo_matrix, shipParams.dynamic.px, shipParams.dynamic.py, shipParams.dynamic.pz);
-    mo_matrix=m4.yRotate(mo_matrix, degToRad(shipParams.dynamic.facing));
-    mo_matrix=m4.scale(mo_matrix, 0.3,0.3,0.3);
+    mo_matrix=m4.yRotate(mo_matrix, degToRad(shipParams.dynamic.yaw));
+    mo_matrix=m4.scale(mo_matrix, 0.1,0.1,0.1);
 
     webglUtils.setBuffersAndAttributes(gl, starshipProgram, starshipInfo);
     webglUtils.setUniforms(starshipProgram, {
@@ -337,8 +364,10 @@ window.onload = function main() {
     webglUtils.drawBufferInfo(gl, starshipInfo);
 
 
-
-    //window.requestAnimationFrame(render); 
+        if (controls.onMobile) {
+            drawDPads(ctx);
+        }
+        else { ctx.clearRect(0, 0, canvas.width, canvas.height); }
     }
 
     var nstep=0;
@@ -367,7 +396,7 @@ var shipParams = {
         px: 2,
         py: 0,
         pz: 2,
-        facing: 0,
+        yaw: 0,
         steering_pos: 0, // Position of steering changes
         vx: 0,
         vy: 0,
@@ -377,24 +406,22 @@ var shipParams = {
         steering_strength: 8.0,
         backsteering_strength: 0.89,
         acc: 0.005,
-        inertia_dampenersX: 0.9,
-        inertia_dampenersY: 0.9,
-        inertia_dampenersZ: 1.0,
-        facing_strength: 3.0,
-
+        inertia_dampeners: 0.9,
+        yaw_strength: 3.0,
     }
 }
 
-var key = [false, false, false, false];
+var key = [false, false, false, false, false, false, false, false, false, false];
 
 function moveStarship(){
     var vxm, vym, vzm; // speed in starship space
 
     // Transform world speeds to starship speeds
-    var cosf = Math.cos(shipParams.dynamic.facing*Math.PI/180.0);
-    var sinf = Math.sin(shipParams.dynamic.facing*Math.PI/180.0);
+    var cosf = Math.cos(shipParams.dynamic.yaw*Math.PI/180.0);
+    var sinf = Math.sin(shipParams.dynamic.yaw*Math.PI/180.0);
+
     vxm = +cosf*shipParams.dynamic.vx - sinf*shipParams.dynamic.vz;
-    vym = shipParams.dynamic.vy;
+    vym = +shipParams.dynamic.vy;
     vzm = +sinf*shipParams.dynamic.vx + cosf*shipParams.dynamic.vz;
 
     // Steering management
@@ -404,13 +431,20 @@ function moveStarship(){
    
     if (key[0]) vzm-=shipParams.static.acc; // accelerazione in avanti
     if (key[2]) vzm+=shipParams.static.acc; // accelerazione indietro
-   
-    // attriti (semplificando)
-    vxm*=shipParams.static.inertia_dampenersX; 
-    vym*=shipParams.static.inertia_dampenersX;
-    vzm*=shipParams.static.inertia_dampenersX;  
+    if (key[8]) vxm-=shipParams.static.acc; // accelerazione a sinistra
+    if (key[9]) vxm+=shipParams.static.acc; // accelerazione a destra
+    if (key[6]) vym+=shipParams.static.acc; // accelerazione in alto
+    if (key[7]) vym-=shipParams.static.acc; // accelerazione in basso
 
-    shipParams.dynamic.facing = shipParams.dynamic.facing - (vzm*shipParams.static.facing_strength)*shipParams.dynamic.steering_pos;
+   
+    // Damping inertia by decreasing speed
+    if (!controls.decoupled) {
+        vxm*=shipParams.static.inertia_dampeners; 
+        vym*=shipParams.static.inertia_dampeners;
+        vzm*=shipParams.static.inertia_dampeners;  
+    }
+
+    shipParams.dynamic.yaw = shipParams.dynamic.yaw + (0.01*shipParams.static.yaw_strength)*shipParams.dynamic.steering_pos;
 
     // back to world speeds
     shipParams.dynamic.vx = +cosf*vxm + sinf*vzm;
@@ -423,6 +457,28 @@ function moveStarship(){
     shipParams.dynamic.pz+=shipParams.dynamic.vz;
 }
 
+function drawDPads(ctx) {
+    ctx.strokeStyle = "rgb(255,255,255)";
+
+    // LEFT DPAD UP
+    ctx.strokeRect(ctx.canvas.width*1/9, ctx.canvas.height/2, ctx.canvas.width/9, ctx.canvas.height/6);
+    // LEFT DPAD DOWN
+    ctx.strokeRect(ctx.canvas.width*1/9, ctx.canvas.height*5/6, ctx.canvas.width/9, ctx.canvas.height/6);
+    // LEFT DPAD LEFT
+    ctx.strokeRect(0, ctx.canvas.height*4/6, ctx.canvas.width/9, ctx.canvas.height/6);
+    // LEFT DPAD RIGHT
+    ctx.strokeRect(ctx.canvas.width*2/9, ctx.canvas.height*4/6, ctx.canvas.width/9, ctx.canvas.height/6);
+
+    // RIGHT DPAD UP
+    ctx.strokeRect(ctx.canvas.width*7/9, ctx.canvas.height/2, ctx.canvas.width/9, ctx.canvas.height/6);
+    // RIGHT DPAD DOWN
+    ctx.strokeRect(ctx.canvas.width*7/9, ctx.canvas.height*5/6, ctx.canvas.width/9, ctx.canvas.height/6);
+    // RIGHT DPAD LEFT
+    ctx.strokeRect(ctx.canvas.width*6/9, ctx.canvas.height*4/6, ctx.canvas.width/9, ctx.canvas.height/6);
+    //RIGHT DPAD RIGHT
+    ctx.strokeRect(ctx.canvas.width*8/9, ctx.canvas.height*4/6, ctx.canvas.width/9, ctx.canvas.height/6);
+}
+
 var controls = {
     orbitRadius1 : 4,
     orbitRadius2 : 8,
@@ -433,29 +489,23 @@ var controls = {
     D: 10,
     freeCam: false,
     targetShip: true,
+    onMobile: false,
+    decoupled: false,
 }
 
 function define_gui(){
     var gui = new dat.GUI();
     
-    gui.add(controls,"orbitRadius1").min(1).max(10).step(1).listen().onChange(function() {
-        render(0);});
-    gui.add(controls,"orbitRadius2").min(1).max(10).step(1).listen().onChange(function() {
-        render(0);});
-    gui.add(controls,"orbitSpeed1").min(0.001).max(0.1).step(0.001).listen().onChange(function() {
-        render(0);});
-    gui.add(controls,"orbitSpeed2").min(0.001).max(0.1).step(0.001).listen().onChange(function() {
-        render(0);});
-    gui.add(controls,"rotationSpeed1").min(0.01).max(1).step(0.01).listen().onChange(function() {
-        render(0);});
-    gui.add(controls,"rotationSpeed2").min(0.01).max(1).step(0.01).listen().onChange(function() {
-        render(0);});
-    gui.add(controls,"D").min(1).max(20).step(1).listen().onChange(function() {
-        render(0);});
-    gui.add(controls, "freeCam")
+    gui.add(controls,"orbitRadius1").min(1).max(10).step(1).listen();
+    gui.add(controls,"orbitRadius2").min(1).max(10).step(1).listen();
+    gui.add(controls,"orbitSpeed1").min(0.001).max(0.1).step(0.001).listen();
+    gui.add(controls,"orbitSpeed2").min(0.001).max(0.1).step(0.001).listen();
+    gui.add(controls,"rotationSpeed1").min(0.01).max(1).step(0.01).listen();
+    gui.add(controls,"rotationSpeed2").min(0.01).max(1).step(0.01).listen();
+    gui.add(controls,"D").min(1).max(20).step(1).listen();
+    gui.add(controls, "freeCam");
     gui.add(controls, "targetShip");
+    gui.add(controls, "onMobile");
+    gui.add(shipParams.static, "acc").min(0.001).max(0.1).step(0.001).listen();
+    gui.add(controls, "decoupled");
 }
-
-
-
-

@@ -8,17 +8,18 @@
         body {
             background: #dddddd;
         }
-        #my_Canvas {
-            margin: 100px;
-            padding: 2px;
-            background: #ffffff;
-            border: thin inset #aaaaaa;
+        #my_Canvas, #overlay_Canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            margin: 30px;
         }
     </style>
    </head>
 <body>
 
 <canvas width="1280" height="720" id="my_Canvas"></canvas>
+<canvas width="1280" height="720" id="overlay_Canvas"></canvas>
 
 <script id="sun-vertex-shader" type="x-shader/x-vertex">
 
