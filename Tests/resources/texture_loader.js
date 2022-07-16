@@ -14,7 +14,7 @@ function loadPlanetTexture(gl, document, faceCubeSize) {
 
     //var image = new Image();
     //image.src = '../TextureGen/earth.png';
-    var image = generateCubeMapTexture(faceCubeSize, 0.5);
+    const image = generateCubeMapTexture(faceCubeSize, 0.5);
 
     const faceInfosPlanet = [
         { target: gl.TEXTURE_CUBE_MAP_POSITIVE_X, sx: 512, sy: 256, sWidth: 256, sHeight: 256, dx: 0, dy: 0, dWidth: 256, dHeight: 256 },
@@ -25,22 +25,27 @@ function loadPlanetTexture(gl, document, faceCubeSize) {
         { target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, sx: 768, sy: 256, sWidth: 256, sHeight: 256, dx: 0, dy: 0, dWidth: 256, dHeight: 256 },
     ];
 
-    image.onload = function() {
-        faceInfosPlanet.forEach((faceInfoPlanet) => {
-            const {target, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight} = faceInfoPlanet;
+    faceInfosPlanet.forEach((faceInfoPlanet) => {
+        const {target, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight} = faceInfoPlanet;
 
-            // Upload the canvas to the cubemap face.
-            const level = 0;
-            const internalFormat = gl.RGBA;
-            const format = gl.RGBA;
-            const type = gl.UNSIGNED_BYTE;
-            
-            ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
-            gl.texImage2D(target, level, internalFormat, format, type, ctx.canvas);
-        });
-        gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    }
+        // Upload the canvas to the cubemap face.
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const format = gl.RGBA;
+        const type = gl.UNSIGNED_BYTE;
+
+        gl.texImage2D(target, level, internalFormat, faceCubeSize, faceCubeSize, 0, format, type, null);
+        
+        image.addEventListener('load', function() {
+          gl.bindTexture(gl.TEXTURE_CUBE_MAP, planetTexture);
+          ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+          gl.texImage2D(target, level, internalFormat, format, type, ctx.canvas);
+          gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+        })
+    });
+    gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+
     return planetTexture;
 }
 

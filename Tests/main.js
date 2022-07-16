@@ -3,13 +3,12 @@ window.onload = function main() {
     var canvas = document.getElementById('my_Canvas');
     gl = canvas.getContext('webgl');
     var faceCubeSize=256;
-    var planet1OrbitRadius = 4;
-    var planet2OrbitRadius = 8;
 
     /*========== Defining and storing the geometry ==========*/
     // Create programs
     var skyboxProgram = webglUtils.createProgramInfo(gl, ["skybox-vertex-shader", "skybox-fragment-shader"]);
     var planetProgram = webglUtils.createProgramInfo(gl, ["planet-vertex-shader", "planet-fragment-shader"]);
+    var starshipProgram = webglUtils.createProgramInfo(gl, ["ship-vertex-shader", "ship-fragment-shader"]);
     var sunProgram = webglUtils.createProgramInfo(gl, ["sun-vertex-shader", "sun-fragment-shader"]);
 
     // Create Skybox buffer and fill with data
@@ -19,16 +18,27 @@ window.onload = function main() {
     // Create planet buffer and fill with data
     const sphereData = createSphereVertices.apply(null,  Array.prototype.slice.call(arguments, 1));
     const sphereInfo = webglUtils.createBufferInfoFromArrays(gl, sphereData);
+
+    // Create starship buffer from blender mesh loading
+    var mesh = new Array();
+    mesh.sourceMesh = '../Spaceship/spaceship.obj';
+    var meshData = loadMesh(gl, mesh);
+    const starshipData = meshData.data.apply(null,  Array.prototype.slice.call(arguments, 1));
+    const starshipInfo = webglUtils.createBufferInfoFromArrays(gl, starshipData);
+
     
     // Texture definition
-    const planetTexture = loadPlanetTexture(gl, document, faceCubeSize);
+    const planetTexture1 = loadPlanetTexture(gl, document, faceCubeSize);
     const planetTexture2 = loadPlanetTexture(gl, document, faceCubeSize);
-    
     const sunTexture = loadSunTexture(gl);
     const skyboxTexture = loadSkyboxTexture(gl);
+    const starshipTexture = meshData.texture;
+
+    /*====== DEFINE GUI =======*/
+    define_gui();
     
 
-    /*==================== MATRIX ====================== */
+    /*==================== MATRIX INFO ====================== */
 
     function degToRad(d) {
     return d * Math.PI / 180;
@@ -43,7 +53,7 @@ window.onload = function main() {
     //console.log(proj_matrix);
 
     //usa libreria m4.js per definire view_matrix
-        var THETA=0, PHI=0, D=14;
+        var THETA=0, PHI=0;
     
     // temporary mov matrix definition
     /*================= Mouse events ======================*/
@@ -84,10 +94,6 @@ window.onload = function main() {
     var orbitAngle2 = 0;
     var rotationAngle1 = 0;
     var rotationAngle2 = 0;
-    var orbitSpeed1 = 0.01;
-    var orbitSpeed2 = 0.005;
-    var rotationSpeed1 = 0.05;
-    var rotationSpeed2 = 0.02;
     var orbitDirection1 = 1;  // 1 or -1
     var orbitDirection2 = -1;
     var sunlightPosition = [0,0,0];
@@ -95,8 +101,7 @@ window.onload = function main() {
     var render=function(time) {
 
     var dt=time-time_old;
-    //      document.write(time);
-    //      console.log(time);
+
         if (!drag) {
             dX*=AMORTIZATION, dY*=AMORTIZATION;
             THETA+=dX, PHI+=dY;
@@ -124,25 +129,9 @@ window.onload = function main() {
         }
     }
 
-    // Movement of first planet
-    var mo_matrix=[];
-    m4.identity(mo_matrix);
-    var planetAngles = updatePlanetAngles(orbitAngle1, orbitSpeed1, rotationAngle1, rotationSpeed1);
-    orbitAngle1 = planetAngles.orbitAngle;
-    rotationAngle1 = planetAngles.rotationAngle;
-    
-    mo_matrix=m4.translate(mo_matrix, 
-        planet1OrbitRadius*Math.cos(degToRad(orbitDirection1*orbitAngle1)) , 
-        0, 
-        planet1OrbitRadius*Math.sin(degToRad(orbitDirection1*orbitAngle1)));
-    
-    mo_matrix=m4.yRotate(mo_matrix, degToRad(rotationAngle1)); // Rotate the planet
-
-    var u_worldInverseTransposeMatrix = m4.transpose(m4.inverse(mo_matrix));
-
-    var camera = [D*Math.sin(PHI)*Math.cos(THETA),
-        D*Math.sin(PHI)*Math.sin(THETA),
-        D*Math.cos(PHI)];
+    var camera = [controls.D*Math.sin(PHI)*Math.cos(THETA),
+                  controls.D*Math.sin(PHI)*Math.sin(THETA),
+                  controls.D*Math.cos(PHI)];
     //    console.log(camera);
     var target = [0, 0, 0];
     var up = [0, 1, 0];
@@ -177,9 +166,25 @@ window.onload = function main() {
     webglUtils.drawBufferInfo(gl, skyboxInfo);
 
     /*============ Draw Planet 1 ============*/
-    gl.bindTexture(gl.TEXTURE_CUBE_MAP, planetTexture);
+    gl.useProgram(planetProgram.program);
 
-    gl.useProgram(planetProgram.program);  
+    // Move planet 1
+    mo_matrix=[];
+    m4.identity(mo_matrix);
+    var planetAngles = updatePlanetAngles(orbitAngle1, controls.orbitSpeed1, rotationAngle1, controls.rotationSpeed1);
+    orbitAngle1 = planetAngles.orbitAngle;
+    rotationAngle1 = planetAngles.rotationAngle;
+    
+    mo_matrix=m4.translate(mo_matrix, 
+        controls.orbitRadius1*Math.cos(degToRad(orbitDirection1*orbitAngle1)) , 
+        0, 
+        controls.orbitRadius1*Math.sin(degToRad(orbitDirection1*orbitAngle1)));
+    
+    mo_matrix=m4.yRotate(mo_matrix, degToRad(rotationAngle1)); // Rotate the planet
+
+    var u_worldInverseTransposeMatrix = m4.transpose(m4.inverse(mo_matrix));
+
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, planetTexture1);  
 
     webglUtils.setBuffersAndAttributes(gl, planetProgram, sphereInfo);
     webglUtils.setUniforms(planetProgram, {
@@ -188,9 +193,40 @@ window.onload = function main() {
       u_world: mo_matrix,
       u_lightWorldPosition: sunlightPosition,
       u_worldInverseTransposeMatrix: u_worldInverseTransposeMatrix, 
-      u_texture: planetTexture,
+      u_texture: planetTexture1,
     });
     webglUtils.drawBufferInfo(gl, sphereInfo);
+
+    /*============ Draw Planet 2 ============*/
+
+    // Move planet 2
+    var mo_matrix=[];
+    m4.identity(mo_matrix);
+    planetAngles = updatePlanetAngles(orbitAngle2, controls.orbitSpeed2, rotationAngle2, controls.rotationSpeed2);
+    orbitAngle2 = planetAngles.orbitAngle;
+    rotationAngle2 = planetAngles.rotationAngle;
+    
+    mo_matrix=m4.translate(mo_matrix, 
+        controls.orbitRadius2*Math.cos(degToRad(orbitDirection2*orbitAngle2)) , 
+        0, 
+        controls.orbitRadius2*Math.sin(degToRad(orbitDirection2*orbitAngle2)));
+    
+    mo_matrix=m4.yRotate(mo_matrix, degToRad(rotationAngle2)); // Rotate the planet
+
+    u_worldInverseTransposeMatrix = m4.transpose(m4.inverse(mo_matrix));
+
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, planetTexture2); 
+
+    webglUtils.setBuffersAndAttributes(gl, planetProgram, sphereInfo);
+    webglUtils.setUniforms(planetProgram, {
+        u_projection: proj_matrix,
+        u_view: view_matrix,
+        u_world: mo_matrix,
+        u_lightWorldPosition: sunlightPosition,
+        u_worldInverseTransposeMatrix: u_worldInverseTransposeMatrix, 
+        u_texture: planetTexture2,
+      });
+      webglUtils.drawBufferInfo(gl, sphereInfo);
 
     /*============ Draw Sun ============*/
     gl.bindTexture(gl.TEXTURE_2D, sunTexture);
@@ -221,14 +257,35 @@ window.onload = function main() {
 
 
 
-/*mo_matrix2=m4.identity();
-m4.yRotate(mo_matrix2, THETA, mo_matrix2);
-m4.xRotate(mo_matrix2, PHI, mo_matrix2);
-mo_matrix2=m4.scale(mo_matrix2, 0.75, 0.75, 0.75);
-mo_matrix2=m4.translate(mo_matrix2, 2, 2, 2);
-gl.uniformMatrix4fv(_Mmatrix, false, mo_matrix2);
+var controls = {
+    orbitRadius1 : 4,
+    orbitRadius2 : 8,
+    orbitSpeed1 : 0.01,
+    orbitSpeed2 : 0.005,
+    rotationSpeed1 : 0.05,
+    rotationSpeed2 : 0.02,
+    D: 10
+}
 
-gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);*/
+function define_gui(){
+    var gui = new dat.GUI();
+    
+    gui.add(controls,"orbitRadius1").min(1).max(10).step(1).listen().onChange(function() {
+        render(0);});
+    gui.add(controls,"orbitRadius2").min(1).max(10).step(1).listen().onChange(function() {
+        render(0);});
+    gui.add(controls,"orbitSpeed1").min(0.001).max(0.1).step(0.001).listen().onChange(function() {
+        render(0);});
+    gui.add(controls,"orbitSpeed2").min(0.001).max(0.1).step(0.001).listen().onChange(function() {
+        render(0);});
+    gui.add(controls,"rotationSpeed1").min(0.01).max(1).step(0.01).listen().onChange(function() {
+        render(0);});
+    gui.add(controls,"rotationSpeed2").min(0.01).max(1).step(0.01).listen().onChange(function() {
+        render(0);});
+    gui.add(controls,"D").min(0).max(20).step(1).listen().onChange(function() {
+        render(0);});
+}
+
 
 
 
