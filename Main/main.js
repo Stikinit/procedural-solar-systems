@@ -88,7 +88,6 @@ window.onload = function main() {
     };
 
     function doKeyDown(e){
-        console.log('down');
         if (e.keyCode == 87) key[0]=true; //W
         if (e.keyCode == 83) key[2]=true; //S
         if (e.keyCode == 65) key[1]=true; //A
@@ -99,7 +98,6 @@ window.onload = function main() {
         if (e.keyCode == 39) key[9]=true; //Arrow right
     }
     function doKeyUp(e){
-        console.log('up');
         if (e.keyCode == 87) key[0]=false; //W
         if (e.keyCode == 83) key[2]=false; //S
         if (e.keyCode == 65) key[1]=false; //A
@@ -110,22 +108,26 @@ window.onload = function main() {
         if (e.keyCode == 39) key[9]=false; //Arrow right
     }
 
+    var lastTouch;
+
     function doTouch(evt) {
         for(var i=0; i<evt.touches.length; i++) {
             var e = evt.touches[i];
             if (e.clientX >= ctx.canvas.width*1/9 && e.clientX <= ctx.canvas.width*2/9 && e.clientY >= ctx.canvas.height/2 && e.clientY <= ctx.canvas.height*4/6) key[0]=true; //W
-            if (e.clientX >= ctx.canvas.width*1/9 && e.clientX <= ctx.canvas.width*2/9 && e.clientY >= ctx.canvas.height*5/6 && e.clientY <= ctx.canvas.height) key[2]=true; //S
-            if (e.clientX >= 0 && e.clientX <= ctx.canvas.width*1/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[1]=true; //A
-            if (e.clientX >= ctx.canvas.width*2/9 && e.clientX <= ctx.canvas.width*3/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[3]=true; //D
-
-            if (e.clientX >= ctx.canvas.width*7/9 && e.clientX <= ctx.canvas.width*8/9 && e.clientY >= ctx.canvas.height/2 && e.clientY <= ctx.canvas.height*4/6) key[6]=true; //Arrow up
-            if (e.clientX >= ctx.canvas.width*7/9 && e.clientX <= ctx.canvas.width*8/9 && e.clientY >= ctx.canvas.height*5/6 && e.clientY <= ctx.canvas.height) key[7]=true; //Arrow down
-            if (e.clientX >= ctx.canvas.width*6/9 && e.clientX <= ctx.canvas.width*7/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[8]=true; //Arrow left
-            if (e.clientX >= ctx.canvas.width*8/9 && e.clientX <= ctx.canvas.width && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[9]=true; //Arrow right
+            else if (e.clientX >= ctx.canvas.width*1/9 && e.clientX <= ctx.canvas.width*2/9 && e.clientY >= ctx.canvas.height*5/6 && e.clientY <= ctx.canvas.height) key[2]=true; //S
+            else if (e.clientX >= 0 && e.clientX <= ctx.canvas.width*1/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[1]=true; //A
+            else if (e.clientX >= ctx.canvas.width*2/9 && e.clientX <= ctx.canvas.width*3/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[3]=true; //D
+            else if (e.clientX >= ctx.canvas.width*7/9 && e.clientX <= ctx.canvas.width*8/9 && e.clientY >= ctx.canvas.height/2 && e.clientY <= ctx.canvas.height*4/6) key[6]=true; //Arrow up
+            else if (e.clientX >= ctx.canvas.width*7/9 && e.clientX <= ctx.canvas.width*8/9 && e.clientY >= ctx.canvas.height*5/6 && e.clientY <= ctx.canvas.height) key[7]=true; //Arrow down
+            else if (e.clientX >= ctx.canvas.width*6/9 && e.clientX <= ctx.canvas.width*7/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[8]=true; //Arrow left
+            else if (e.clientX >= ctx.canvas.width*8/9 && e.clientX <= ctx.canvas.width && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[9]=true; //Arrow right
+            else {lastTouch = e; drag=true;} // Outside of layout => camera change
         }
+        evt.preventDefault();
     }
 
     function doEndTouch(evt) {
+        drag=false;
         for(var i=0; i<evt.changedTouches.length; i++) {
             var e = evt.changedTouches[i];
             if (e.clientX >= ctx.canvas.width*1/9 && e.clientX <= ctx.canvas.width*2/9 && e.clientY >= ctx.canvas.height/2 && e.clientY <= ctx.canvas.height*4/6) key[0]=false; //W
@@ -138,6 +140,22 @@ window.onload = function main() {
             if (e.clientX >= ctx.canvas.width*6/9 && e.clientX <= ctx.canvas.width*7/9 && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[8]=false; //Arrow left
             if (e.clientX >= ctx.canvas.width*8/9 && e.clientX <= ctx.canvas.width && e.clientY >= ctx.canvas.height*4/6 && e.clientY <= ctx.canvas.height*5/6) key[9]=false; //Arrow right
         }
+        evt.preventDefault();
+    }
+    
+    function doMoveTouch(evt) {
+        if (!drag) return false;
+        for(var i=0; i<evt.changedTouches.length; i++) {
+            if (evt.changedTouches[i].identifier == lastTouch.identifier) {
+                var changedTouch = evt.changedTouches[i];
+                dX=(changedTouch.clientX-lastTouch.clientX)*2*Math.PI/canvas.width, 
+                dY=(changedTouch.clientY-lastTouch.clientY)*2*Math.PI/canvas.height; 
+                THETA+=dX;
+                PHI+=dY;
+                lastTouch = changedTouch;
+            }
+        }
+        evt.preventDefault();
     }
 
     //We don't want to trigger scrolling of any type
@@ -153,8 +171,9 @@ window.onload = function main() {
     overlay_canvas.onmousemove=mouseMove;
     window.addEventListener('keydown', doKeyDown, true);
     window.addEventListener('keyup', doKeyUp, true);
-    overlay_canvas.addEventListener('touchstart', doTouch, true);
-    overlay_canvas.addEventListener('touchend', doEndTouch, true);
+    overlay_canvas.addEventListener('touchstart', doTouch, false);
+    overlay_canvas.addEventListener('touchend', doEndTouch, false);
+    overlay_canvas.addEventListener('touchmove', doMoveTouch, false);
 
     /*=================== Drawing =================== */
     var time_old=0;
