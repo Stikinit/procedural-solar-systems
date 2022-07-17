@@ -112,6 +112,72 @@ function loadSkyboxTexture(gl) {
     return skyboxTexture;
 }
 
+function loadFaceTexture(gl) {
+
+  /*====================== Skybox Texture definition =====================*/
+  const faceTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, faceTexture);
+
+  const faceInfos = [
+    {
+      target: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+      url: '../MyFace/face.jpg',
+    },
+    {
+      target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+      url: '../MyFace/face.jpg',
+    },
+    {
+      target: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+      url: '../MyFace/face.jpg',
+    },
+    {
+      target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+      url: '../MyFace/face.jpg',
+    },
+    {
+      target: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+      url: '../MyFace/face.jpg',
+    },
+    {
+      target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
+      url: '../MyFace/face.jpg',
+    },
+  ];
+
+  faceInfos.forEach((faceInfo) => {
+    const {target, url} = faceInfo;
+
+    // Upload the canvas to the cubemap face.
+    const level = 0;
+    const internalFormat = gl.RGBA;
+    const width = 1024;
+    const height = 1024;
+    const format = gl.RGBA;
+    const type = gl.UNSIGNED_BYTE;
+
+    // setup each face so it's immediately renderable
+    gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
+
+    // Asynchronously load an image
+    const image = new Image();
+    image.src = url;
+    image.addEventListener('load', function() {
+      // Now that the image has loaded make copy it to the texture.
+      gl.bindTexture(gl.TEXTURE_CUBE_MAP, faceTexture);
+      gl.texImage2D(target, level, internalFormat, format, type, image);
+      gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    });
+  });
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+  return faceTexture;
+}
+
 function loadSunTexture(gl) {
   const sunTexture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, sunTexture);

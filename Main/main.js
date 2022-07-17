@@ -34,7 +34,8 @@ window.onload = function main() {
     // Texture definition
     const planetTexture1 = loadPlanetTexture(gl, document, faceCubeSize);
     const planetTexture2 = loadPlanetTexture(gl, document, faceCubeSize);
-    const moonTexture = loadPlanetTexture(gl, document, faceCubeSize);
+    const planetTexture3 = loadPlanetTexture(gl, document, faceCubeSize);
+    const moonTexture = loadFaceTexture(gl);
     const sunTexture = loadSunTexture(gl);
     const skyboxTexture = loadSkyboxTexture(gl);
     const starshipTexture = meshData.texture;
@@ -180,10 +181,16 @@ window.onload = function main() {
     var time_old=0;
     var orbitAngle1 = 0;
     var orbitAngle2 = 0;
+    var orbitAngle3 = 0;
+    var orbitAngleMoon = 0;
     var rotationAngle1 = 0;
     var rotationAngle2 = 0;
+    var rotationAngle3 = 0;
+    var rotationAngleMoon = 0;
     var orbitDirection1 = 1;  // 1 or -1
     var orbitDirection2 = -1;
+    var orbitDirection3 = 1;
+    var orbitDirectionMoon = -1;
     var sunlightPosition = [0,0,0];
 
 
@@ -283,7 +290,7 @@ window.onload = function main() {
     
     mo_matrix=m4.translate(mo_matrix, 
         controls.orbitRadius1*Math.cos(degToRad(orbitDirection1*orbitAngle1)) , 
-        0, 
+        controls.inclination1*controls.orbitRadius1*Math.sin(degToRad(orbitDirection1*orbitAngle1)), 
         controls.orbitRadius1*Math.sin(degToRad(orbitDirection1*orbitAngle1)));
     
     moon_matrix = mo_matrix;
@@ -306,15 +313,20 @@ window.onload = function main() {
 
     /*========= Draw Moon ==========*/
     // Translate the mov matrix again for moon movement around the planet
-    gl.bindTexture(gl.TEXTURE_CUBE_MAP, moonTexture); 
+    planetAngles = updatePlanetAngles(orbitAngleMoon, controls.orbitSpeedMoon, rotationAngleMoon, controls.rotationSpeedMoon);
+    orbitAngleMoon = planetAngles.orbitAngle;
+    rotationAngleMoon = planetAngles.rotationAngle;
+
     mo_matrix=m4.translate(moon_matrix, 
-        1*Math.cos(degToRad(orbitDirection2*orbitAngle2)) , 
-        0, 
-        1*Math.sin(degToRad(orbitDirection2*orbitAngle2)));
-    mo_matrix=m4.yRotate(mo_matrix, degToRad(rotationAngle1)); // Rotate the moon
-    mo_matrix=m4.scale(mo_matrix, 0.4,0.4,0.4);
+        Math.cos(degToRad(orbitDirectionMoon*orbitAngleMoon)) , 
+        Math.sin(degToRad(orbitDirectionMoon*orbitAngleMoon)), 
+        Math.sin(degToRad(orbitDirectionMoon*orbitAngleMoon)));
+    mo_matrix=m4.yRotate(mo_matrix, degToRad(rotationAngleMoon)); // Rotate the moon
+    mo_matrix=m4.scale(mo_matrix, 0.3,0.3,0.3);
 
     u_worldInverseTransposeMatrix = m4.transpose(m4.inverse(mo_matrix));
+
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, moonTexture); 
 
     webglUtils.setBuffersAndAttributes(gl, planetProgram, sphereInfo);
     webglUtils.setUniforms(planetProgram, {
@@ -328,7 +340,6 @@ window.onload = function main() {
     webglUtils.drawBufferInfo(gl, sphereInfo);
 
     
-
     /*============ Draw Planet 2 ============*/
 
     // Move planet 2
@@ -340,7 +351,7 @@ window.onload = function main() {
     
     mo_matrix=m4.translate(mo_matrix, 
         controls.orbitRadius2*Math.cos(degToRad(orbitDirection2*orbitAngle2)) , 
-        0, 
+        controls.inclination2*controls.orbitRadius2*Math.cos(degToRad(orbitDirection2*orbitAngle2)), 
         controls.orbitRadius2*Math.sin(degToRad(orbitDirection2*orbitAngle2)));
     
     mo_matrix=m4.yRotate(mo_matrix, degToRad(rotationAngle2)); // Rotate the planet
@@ -357,6 +368,38 @@ window.onload = function main() {
         u_lightWorldPosition: sunlightPosition,
         u_worldInverseTransposeMatrix: u_worldInverseTransposeMatrix, 
         u_texture: planetTexture2,
+      });
+      webglUtils.drawBufferInfo(gl, sphereInfo);
+
+
+      /*============ Draw Planet 3 ============*/
+
+    // Move planet 3
+    var mo_matrix=[];
+    m4.identity(mo_matrix);
+    planetAngles = updatePlanetAngles(orbitAngle3, controls.orbitSpeed3, rotationAngle3, controls.rotationSpeed3);
+    orbitAngle3 = planetAngles.orbitAngle;
+    rotationAngle3 = planetAngles.rotationAngle;
+    
+    mo_matrix=m4.translate(mo_matrix, 
+        controls.orbitRadius3*Math.cos(degToRad(orbitDirection3*orbitAngle3)) , 
+        controls.inclination3*controls.orbitRadius3*Math.sin(degToRad(orbitDirection3*orbitAngle3)), 
+        controls.orbitRadius3*Math.sin(degToRad(orbitDirection3*orbitAngle3)));
+    
+    mo_matrix=m4.yRotate(mo_matrix, degToRad(rotationAngle3)); // Rotate the planet
+
+    u_worldInverseTransposeMatrix = m4.transpose(m4.inverse(mo_matrix));
+
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, planetTexture3); 
+
+    webglUtils.setBuffersAndAttributes(gl, planetProgram, sphereInfo);
+    webglUtils.setUniforms(planetProgram, {
+        u_projection: proj_matrix,
+        u_view: view_matrix,
+        u_world: mo_matrix,
+        u_lightWorldPosition: sunlightPosition,
+        u_worldInverseTransposeMatrix: u_worldInverseTransposeMatrix, 
+        u_texture: planetTexture3,
       });
       webglUtils.drawBufferInfo(gl, sphereInfo);
 
@@ -528,10 +571,18 @@ function drawDPads(ctx) {
 var controls = {
     orbitRadius1 : 4,
     orbitRadius2 : 8,
+    orbitRadius3: 12,
     orbitSpeed1 : 0.01,
     orbitSpeed2 : 0.005,
+    orbitSpeed3 : 0.007,
+    orbitSpeedMoon: 0.07,
     rotationSpeed1 : 0.05,
     rotationSpeed2 : 0.02,
+    rotationSpeed3 : 0.01,
+    rotationSpeedMoon : 0.08,
+    inclination1 : Math.random()/2.0,
+    inclination2 : Math.random()/2.0,
+    inclination3 : Math.random()/2.0, 
     D: 10,
     freeCam: false,
     targetShip: true,
@@ -542,12 +593,17 @@ var controls = {
 function define_gui(){
     var gui = new dat.GUI();
     
-    gui.add(controls,"orbitRadius1").min(1).max(10).step(1).listen();
-    gui.add(controls,"orbitRadius2").min(1).max(10).step(1).listen();
+    gui.add(controls,"orbitRadius1").min(1).max(20).step(1).listen();
+    gui.add(controls,"orbitRadius2").min(1).max(20).step(1).listen();
+    gui.add(controls,"orbitRadius3").min(1).max(20).step(1).listen();
     gui.add(controls,"orbitSpeed1").min(0.001).max(0.1).step(0.001).listen();
     gui.add(controls,"orbitSpeed2").min(0.001).max(0.1).step(0.001).listen();
+    gui.add(controls,"orbitSpeed3").min(0.001).max(0.1).step(0.001).listen();
+    gui.add(controls,"orbitSpeedMoon").min(0.001).max(0.2).step(0.001).listen();
     gui.add(controls,"rotationSpeed1").min(0.01).max(1).step(0.01).listen();
     gui.add(controls,"rotationSpeed2").min(0.01).max(1).step(0.01).listen();
+    gui.add(controls,"rotationSpeed3").min(0.01).max(1).step(0.01).listen();
+    gui.add(controls,"rotationSpeedMoon").min(0.01).max(1).step(0.01).listen();
     gui.add(controls,"D").min(1).max(20).step(1).listen();
     gui.add(controls, "freeCam");
     gui.add(controls, "targetShip");
