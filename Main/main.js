@@ -34,6 +34,7 @@ window.onload = function main() {
     // Texture definition
     const planetTexture1 = loadPlanetTexture(gl, document, faceCubeSize);
     const planetTexture2 = loadPlanetTexture(gl, document, faceCubeSize);
+    const moonTexture = loadPlanetTexture(gl, document, faceCubeSize);
     const sunTexture = loadSunTexture(gl);
     const skyboxTexture = loadSkyboxTexture(gl);
     const starshipTexture = meshData.texture;
@@ -285,6 +286,7 @@ window.onload = function main() {
         0, 
         controls.orbitRadius1*Math.sin(degToRad(orbitDirection1*orbitAngle1)));
     
+    moon_matrix = mo_matrix;
     mo_matrix=m4.yRotate(mo_matrix, degToRad(rotationAngle1)); // Rotate the planet
 
     var u_worldInverseTransposeMatrix = m4.transpose(m4.inverse(mo_matrix));
@@ -301,6 +303,31 @@ window.onload = function main() {
       u_texture: planetTexture1,
     });
     webglUtils.drawBufferInfo(gl, sphereInfo);
+
+    /*========= Draw Moon ==========*/
+    // Translate the mov matrix again for moon movement around the planet
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, moonTexture); 
+    mo_matrix=m4.translate(moon_matrix, 
+        1*Math.cos(degToRad(orbitDirection2*orbitAngle2)) , 
+        0, 
+        1*Math.sin(degToRad(orbitDirection2*orbitAngle2)));
+    mo_matrix=m4.yRotate(mo_matrix, degToRad(rotationAngle1)); // Rotate the moon
+    mo_matrix=m4.scale(mo_matrix, 0.4,0.4,0.4);
+
+    u_worldInverseTransposeMatrix = m4.transpose(m4.inverse(mo_matrix));
+
+    webglUtils.setBuffersAndAttributes(gl, planetProgram, sphereInfo);
+    webglUtils.setUniforms(planetProgram, {
+      u_projection: proj_matrix,
+      u_view: view_matrix,
+      u_world: mo_matrix,
+      u_lightWorldPosition: sunlightPosition,
+      u_worldInverseTransposeMatrix: u_worldInverseTransposeMatrix, 
+      u_texture: moonTexture,
+    });
+    webglUtils.drawBufferInfo(gl, sphereInfo);
+
+    
 
     /*============ Draw Planet 2 ============*/
 
