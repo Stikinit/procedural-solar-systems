@@ -604,7 +604,7 @@ function define_gui(){
     gui.add(controls,"rotationSpeed2").min(0.01).max(1).step(0.01).listen();
     gui.add(controls,"rotationSpeed3").min(0.01).max(1).step(0.01).listen();
     gui.add(controls,"rotationSpeedMoon").min(0.01).max(1).step(0.01).listen();
-    gui.add(controls,"D").min(1).max(20).step(1).listen();
+    gui.add(controls,"D").min(0.5).max(20).step(0.5).listen();
     gui.add(controls, "freeCam");
     gui.add(controls, "targetShip");
     gui.add(controls, "onMobile");

@@ -205,35 +205,3 @@ function loadSunTexture(gl) {
 
   return sunTexture;
 }
-
-function loadNormalMapTexture(gl) {
-  const sunTexture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, sunTexture);
-
-  const image = new Image();
-  image.src = '../../NormalMaps/moonlike.png';
-
-  const target = gl.TEXTURE_2D;
-  const level = 0;
-  const internalFormat = gl.RGBA;
-  const width = 1024;
-  const height = 512;
-  const format = gl.RGBA;
-  const type = gl.UNSIGNED_BYTE;
-
-  // setup texture so it's immediately renderable
-  gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
-
-  image.addEventListener('load', function() {
-    gl.bindTexture(gl.TEXTURE_2D, sunTexture);
-    gl.texImage2D(target, level, internalFormat, format, type, image);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  });
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
-  return sunTexture;
-}
