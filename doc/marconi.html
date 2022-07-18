@@ -1,0 +1,268 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<link rel="stylesheet" type="text/css" href="./style.css">
+<!--
+<script type="text/javascript" src="../css/issStyle.js"></script>
+-->    
+<head>
+   
+<title>Procedural Solar System</title></head>
+    
+<body>
+<div id="top">
+<h1>Procedural Solar System<font size="5"></font> </h1>
+</div>  
+
+<div class="body"> 
+<h2>Abstract</h2>
+<div class="remark">
+	L'obiettivo di questa applicazione è la generazione procedurale di un <ks>sistema solare</ks> in ambiente 3d 
+	creato con <ks>WebGl2</ks>.<br>
+	Ogni pianeta al suo interno dovrà essere diverso, e dovrà occupare il proprio posto all'interno dello
+	spazio.
+	Sarà poi possibile muoversi attraverso il sistema grazie ad una navicella <ks>spaziale</ks>. 
+</div>
+
+<h2>Generazione Texture Procedurale per i Pianeti</h2>
+Nella prima fase di sviluppo ci si è occupati della creazione di <k>texture procedurali</k> che sono poi utilizzate
+sulle mesh sferiche per creare i pianeti.
+Questa funzionalità assicura che, riavviando l'applicazione, nessun sistema solare sarà uguale agli altri.
+<ul>
+	<br><li><ks>Simplex Noise</ks>: algoritmo che rappresenta la parte <k>casuale</k> dell'algoritmo.</li>
+	<li><ks>Texture creation & Coloring</ks>: disposizione in formato <k>cubemap</k> e colorazione dei pixel.</li>
+</ul>
+
+<h3>Simplex Noise e parametri</h3><br>
+<table style="width:98%">
+<tbody>	
+<tr>
+<td style="width:40%" >
+<center>Per la generazione delle "altitudini" possono essere usati vari algoritmi (Perlin, Simplex...).<br><br>
+Per questa applicazione è stato scelto il <k>Simplex</k>, data la sua efficienza e generale efficacia rispetto
+al "rivale" Perlin.<br><br>
+Essendo un'algoritmo basato su generazione di noise <k>n-dimensionale</k>, i parametri in input corrispodono a
+coordinate nello spazio e, di conseguenza, l'output può essere rappresentato in un immagine.</center>
+</td>
+<td><center><img src="./images/render-elevation-2d.png" alt="Noise" width="30%" height=30%"" ></center>
+</td>
+</tr>
+</tbody>
+</table>
+<br>
+Queste immagini sono modificabili grazie a <ks>parametri</ks> che agiscono sugli input/output.
+In questo progetto sono stati utilizzati:
+<ul>
+	<li><ks>3 coordinate in input</ks>:<br>
+		<div class="remark">
+			Il rumore (o altitudine) viene generato in <ks>spazio 3D</ks>. Questo perchè la texture finale dovrà essere "continua" per fare un <k>wrapping</k>
+			coerente attorno alla sfera.
+			<pre>noise3D(nx, ny, nz) / 2 + 0.5;</pre>
+			L'output dell'algoritmo è compreso tra -1 e 1. Noi vogliamo che sia compreso tra 0 e 1 per facilitare la colorazione.
+		</div>
+	</li>
+	<li><ks>Scale</ks>:<br>
+		<div class="remark">
+			L'operazione di scaling cambia la "distanza" dall'immagine, ovvero lo <ks>zoom</ks>.
+			<pre>noise3D(nx / scale, ny / scale, nz / scale) / 2 + 0.5;</pre>
+			<table style="width:98%">
+				<tbody>	
+				<tr>
+				<td style="width:50%" >
+					<h4>Scale: 0.5</h4> 
+					<center><img src="./images/noise-scale-big.png" alt="Noise" width="60%" ></center>
+				</td>
+				<td style="width:50%">
+					<h4>Scale: 0.25</h4>
+					<center><img src="./images/noise-scale-small.png" alt="Noise" width="60%" ></center>
+				</td>
+				</tr>
+				</tbody>
+			</table>
+			<br>L'inverso della scala è chiamato <k>frequenza</k>.
+		</div>
+
+	<li><ks>Octaves</ks>:<br>
+		<div class="remark">
+			<table style="width:98%">
+				<tbody>	
+				<tr>
+				<td style="width:50%" >
+					<center>Le ottave implementano proprietà <k>frattali</k> che aggiungono dettagli alle immagini generate dalla noise.<br>
+					Ogni ottava si aggiunge al valore finale dell'output contribuendo con una <ks>scala/frequenza</ks> e <ks>peso</ks> diversi.<br>
+					Ad ogni passo, la scala/frequeza diminuisce/aumenta.<br>
+					Più ottave ci sono, più l'immagine risulterà dettagliata e nitida.</center>
+				</td>
+				<td style="width:50%">
+					<center><img src="./images/octaves.png" alt="Octaves" width="60%" ></center>
+				</td>
+				</tr>
+				</tbody>
+			</table>
+			<br>In questo progetto sono state scelte empiricamente 6 ottave. Il livello di dettaglio è perfetto per texture planetarie.
+		</div>
+	 </li>
+</ul>
+
+<h3>Creazione Texture e Coloring</h3>
+<h4>Scelta del formato</h4>
+<table style="width:98%">
+	<tbody>	
+	<tr>
+	<td style="width:50%" >
+		<center>L'output della creazione è un'immagine .png in cui i pixel sono disposti in modo da creare una <ks>cubeMap</ks>.<br>
+		Ciò vuol dire che ci sono 6 facce disposte in modo tale da formare i lati di un cubo.<br>
+		Questo formato è molto conveniente perchè ci permette di salvare in una immagine 2d la texture di una sfera 3d evitando artefatti causati
+		dal <ks>mismatch</ks> dei lati di una texture qualunque.</center>
+	</td>
+	<td style="width:50%">
+		<center><img src="./images/cubemap-scheme.jpg" alt="scheme" width="60%" ></center>
+	</td>
+	</tr>
+	<tr>
+		<td style="width:50%" >
+			<center>Una seconda opzione sarebbe stata quella di generare immagini <ks>equirettangolari</ks> (che contengono le stesse informazioni di una cubeMap, ma in un immagine completa).
+			Tuttavia la complessità delle operazioni sarebbe stata fin troppo grande per giustificarne l'uso.</center>
+		</td>
+		<td style="width:50%">
+			<center><img src="./images/equirect-scheme.jpg" alt="scheme" width="60%" ></center>
+		</td>
+		</tr>
+	</tbody>
+</table>
+<h4>Algoritmo di Disegno</h4>
+<ol>
+	<li>Si sceglie una coppia di <ks>facciate</ks> opposte della cubeMap.</li>
+	<li>Vengono calcolate tutte le <ks>altitudini</ks> di una delle due facciate dallo spazio <ks>3-dimensionale</ks>.</li>
+	<li>Per ogni valore di noise, se ne calcola il colore utilizzando una <ks>palette</ks> di colori casuale.
+		<per>Esistono due modi per estrarre il colore dalla palette:
+			<ul>
+				<li><k>gradiente</k>: la palette cambia in maniera graduale (es. un valore di 0.3 darà sempre un colore diverso dal valore di 0.35, ma comunque molto simile).</li>
+				<li><k>distinto</k>: la palette è divisa in N colori, il risultato è un'immagine più definita, ma meno realistica.</li>
+			</ul>
+		</per>
+	</li>
+	<li>Si colora il pixel corrispondente nello spazio 2d su un canvas.</li>
+	<li>I punti precedenti vengono ripetuti per ogni altra coppia opposta di facce.</li>
+	<li>Il canvas viene convertito in <ks>Image()</ks>
+		<pre>var img = new Image();<br>img.src = mc.toDataURL('image/png');</pre>
+	</li>
+</ol>
+<div class="remark">
+	E' possibile visualizzare l'algoritmo in azione in <a href="../TextureGen/TextureGeneratorVisualizer.html" target="_blank">TextureGeneratorVisualizer.html</a>.
+</div>
+
+<h2>Componenti Sistema Solare</h2>
+In questa sezione analizziamo gli oggetti renderizzati dalla scena: la loro <k>definizione</k>, <k>creazione</k> e <k>gestione</k>.
+
+<h3>Gestione Dati Mesh</h3>
+Abbiamo bisogno di 2 forme semplici ed una mesh complessa:
+<ul>
+	<li><ks>Skybox Quad</ks>: un quad che copre il canvas su cui disegnare la <ks>skybox</ks>. <kc>Funzione di creazione vista a lezione</kc>.</li>
+	<li><ks>Sphere</ks>: i dati di una semplice sfera, usata per i pianeti, sole e luna. <kc>Funzione di creazione vista a lezione</kc>.</li>
+	<li><ks>Spaceship</ks>: la mesh complessa di un'astronave, con anche le informazioni sul materiale. <kc>Creata e Texturata con Blender</kc></li>
+</ul>
+Tutti i <k>VBO</k> e <k>IBO</k> sono definiti grazie alla libreria <kc>webgl-utils</kc> (webglUtils.createBufferInfoFromArrays).
+<h3>Skybox</h3>
+<ul><li><ks>Texture</ks>
+La texture è una cubeMap scaricata da un <a href="https://tools.wwwtyro.net/space-3d/index.html" target="_blank">sito di generazione procedurale di skybox</a>, ed ogni faccia viene caricata in successione da <kc>gl.texImage2D</kc>. 
+Inoltre, usiamo <ks>mipmap</ks> visto che le dimensioni delle facce sono una potenza di 2.</li>
+</ul>
+<h3>Corpi Celesti</h3>
+<h4>Sole</h4>
+<table style="width:98%">
+	<tbody>	
+	<tr>
+	<td style="width:50%" >
+		<center><div class="remark">Il sole è l'unico corpo celeste che non si muove, funge da punto di rifermento del sistema ed al suo centro, in posizione [0,0,0]
+			si trova l'unica <ks>fonte di luce</ks> della scena.</div></center>
+		
+		<ul><li><ks>Texture</ks><br>
+			La texture usata per la stella è un'immagine equirettangolare scaricata da un <a href="https://www.solarsystemscope.com/textures/" target="_blank">sito di texture a tema</a>.
+			Dunque è bastato chiamare <kc>texture2D</kc> nel fragment shader per avere un risultato soddisfacente. <br>Anche per la texture del sole utilizziamo <ks>mipmap</ks>.</li>
+			<li><ks>Shaders</ks><br>
+			La particolarità degli shader del sole è che non hanno alcun sistema di <ks>illuminazione</ks>. Questo però è ovvio, visto che è proprio il sole ad "emettere" luce.
+			</li>
+		</ul>
+	</td>
+	<td style="width:50%">
+		<center><img src="./images/sun.png" alt="sun" width="50%" ></center>
+	</td>
+	</tr>
+	</tbody>
+</table>
+
+
+<h4>Pianeti</h4>
+<table style="width:98%">
+	<tbody>	
+	<tr>
+	<td style="width:50%" >
+		<center><div class="remark">Ci sono 3 pianeti nella scena, ognuno con i suoi parametri (velocità orbite, rotazione, ecc...).<br>
+		Il loro movimento avviene grazie alle trasformazioni effettuate sulle <k>mo_matrix</k> corrispondenti.<br><br>
+		Gli <ks>angoli di orbita</ks> e <ks>rotazione</ks> vengono aggiornati ad ogni <k>render</k> in base al tempo trascorso <k>dt</k> e alle variabili parametriche
+		menzionate in precedenza. </div></center>
+		
+		<ul><li><ks>Texture</ks><br>
+			Per poter caricare la texture procedurale in formato cubeMap, dobbiamo seguire varie fasi:
+			<ul>
+				<li>Creare un <ks>contesto canvas 2d</ks> su cui disegnare ogni faccia.</li>
+				<li>Definire gli <ks>identificatori/target</ks> delle facce insieme alle coordinate della faccia stessa sulla texture cubeMap.<br></li>
+				<pre>{target:gl.TEXTURE_CUBE_MAP_POSITIVE_X,sx:512,sy:256,sWidth:256,sHeight:256,dx:0,dy:0,dWidth:256,dHeight:256},...</pre>
+				<li>Ottenere la cubeMap dalla generazione procedurale sotto forma di <k>Image</k>.</li>
+				<li>Per ogni target, disegnare la faccia sul canvas.</li>
+				<li>Usare il contenuto del canvas come array di dati per <kc>gl.texImage2D.</kc></li>
+
+			</ul>
+			<li><ks>Shaders</ks><br>
+			La particolarità degli shader del sole è che non hanno alcun sistema di <ks>illuminazione</ks>. Questo però è ovvio, visto che è proprio il sole ad "emettere" luce.
+			</li>
+		</ul>
+	</td>
+	<td style="width:50%">
+		<center><img src="./images/planets.png" alt="sun" width="50%" ></center>
+	</td>
+	</tr>
+	</tbody>
+</table>
+
+<h3>Astronave</h3>
+
+
+
+<h2>Funzioni, Parametri e Guida</h2>
+
+
+
+<h2>Sviluppi Futuri</h2>
+</div>
+
+ 
+ 
+</div>
+
+ <!--
+
+<table style="width:98%">
+<tbody>	
+<tr>
+<td style="width:50%" >
+ 
+
+</td>
+<td>
+</td>
+</tr>
+ </tbody>
+</table>
+-->
+	      	
+<br/><br/> 	
+</div>  
+
+<div >
+<hr/>
+<p>Gabriele Marconi</p>
+gabriele.marconi@studio.unibo.it
+</div> 
+</body>
+</html>

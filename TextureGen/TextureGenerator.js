@@ -48,7 +48,7 @@ function getHeight3D(x, y, z, scale, power, cubeFaceSize) {
 }
 
 function cubeMapNoiseGenerator(cubeFaceSize, scale, power, colorScale, ctx) {
-    let cubeMap = new Array(cubeFaceSize*4).fill(new Array(cubeFaceSize*3).fill(0));
+    let cubeMap = new Array(cubeFaceSize*4).fill(new Array(cubeFaceSize*3).fill(0)); //This is actually not being used, but it could be useful in the future
     let height = 0;
     //Z STATIC
     for(
