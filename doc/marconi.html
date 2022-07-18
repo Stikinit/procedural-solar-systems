@@ -18,9 +18,9 @@
 <div class="remark">
 	L'obiettivo di questa applicazione è la generazione procedurale di un <ks>sistema solare</ks> in ambiente 3d 
 	creato con <ks>WebGl2</ks>.<br>
-	Ogni pianeta al suo interno dovrà essere diverso, e dovrà occupare il proprio posto all'interno dello
+	Ogni pianeta al suo interno dovrà essere diverso, e dovrà occupare il proprio posto nello
 	spazio.
-	Sarà poi possibile muoversi attraverso il sistema grazie ad una navicella <ks>spaziale</ks>. 
+	Sarà poi possibile muoversi attraverso il sistema grazie ad una <ks>navicella spaziale</ks>. 
 </div>
 
 <h2>Generazione Texture Procedurale per i Pianeti</h2>
@@ -28,7 +28,7 @@ Nella prima fase di sviluppo ci si è occupati della creazione di <k>texture pro
 sulle mesh sferiche per creare i pianeti.
 Questa funzionalità assicura che, riavviando l'applicazione, nessun sistema solare sarà uguale agli altri.
 <ul>
-	<br><li><ks>Simplex Noise</ks>: algoritmo che rappresenta la parte <k>casuale</k> dell'algoritmo.</li>
+	<br><li><ks>Simplex Noise</ks>: componente che rappresenta la parte <k>casuale</k> dell'algoritmo.</li>
 	<li><ks>Texture creation & Coloring</ks>: disposizione in formato <k>cubemap</k> e colorazione dei pixel.</li>
 </ul>
 
@@ -148,7 +148,8 @@ In questo progetto sono stati utilizzati:
 	</li>
 </ol>
 <div class="remark">
-	E' possibile visualizzare l'algoritmo in azione in <a href="../TextureGen/TextureGeneratorVisualizer.html" target="_blank">TextureGeneratorVisualizer.html</a>.
+	E' possibile visualizzare l'algoritmo in azione in <a href="../TextureGen/TextureGeneratorVisualizer.html" target="_blank">TextureGeneratorVisualizer.html</a>.<br>
+	Ricaricare la pagina per generare una texture diversa.
 </div>
 
 <h2>Componenti Sistema Solare</h2>
@@ -173,7 +174,7 @@ Inoltre, usiamo <ks>mipmap</ks> visto che le dimensioni delle facce sono una pot
 	<tbody>	
 	<tr>
 	<td style="width:50%" >
-		<center><div class="remark">Il sole è l'unico corpo celeste che non si muove, funge da punto di rifermento del sistema ed al suo centro, in posizione [0,0,0]
+		<center><div class="remark">Il sole è l'unico corpo celeste che non si muove, funge da punto di rifermento del sistema ed al suo centro, in posizione [0,0,0],
 			si trova l'unica <ks>fonte di luce</ks> della scena.</div></center>
 		
 		<ul><li><ks>Texture</ks><br>
@@ -214,26 +215,142 @@ Inoltre, usiamo <ks>mipmap</ks> visto che le dimensioni delle facce sono una pot
 
 			</ul>
 			<li><ks>Shaders</ks><br>
-			La particolarità degli shader del sole è che non hanno alcun sistema di <ks>illuminazione</ks>. Questo però è ovvio, visto che è proprio il sole ad "emettere" luce.
+			Per poter mappare le <ks>coordinate UV</ks> della texture cubeMap ad una sfera usiamo l'attributo normale passato direttamente
+			al fragment shader.
+			<pre>gl_FragColor = textureCube(u_texture, n);</pre>
+			Per l'illuminazione, calcoliamo la direzione <k>dalla superficie alla luce</k> nel vertex shader:
+			<pre>v_surfaceToLight = u_lightWorldPosition - surfaceWorldPosition.xyz;</pre>
+			Poi, nel fragment shader, la utilizziamo per calcolare la luce che colpisce quel fragment facendo il <k>dot-product</k>
+			con la normale (in questo caso, tuttavia, la normale era stata ridirezionata con la <ks>world matrix</ks> nel vertex shader).
+			<pre>float light = dot(normal, surfaceToLightDirection);</pre>
+			Il tutto moltiplicato per il valore ottenuto dalla texturizzazione.
 			</li>
 		</ul>
 	</td>
 	<td style="width:50%">
-		<center><img src="./images/planets.png" alt="sun" width="50%" ></center>
+		<center><img src="./images/planets.png" alt="sun" width="100%" ></center>
 	</td>
 	</tr>
 	</tbody>
 </table>
+<div class="remark">
+	La <ks>luna</ks> texturata con il viso del sottoscritto è un semplice pianeta <k>scalato</k>, e <k>traslato</k> nel tempo.
+	La traslazione avviene sulla <ks>mo_matrix</ks> del pianeta attorno al quale la luna orbita. In questo modo, la luna ruota attorno al pianeta e lo segue 
+	al contempo.
+</div>
 
 <h3>Astronave</h3>
 
+<table style="width:98%">
+	<tbody>	
+	<tr>
+	<td style="width:50%" >
+		<ul><li><ks>Model</ks><br>
+			Il modello dell'astronave è stato importato su Blender da un file <k>.blend</k> esterno.
+			</li>
+			<li><ks>Texturing</ks><br>
+			Per il texturing è stata usata una sola texture, modificata a dovere (ad es. colore del vetro del cockpit).
+			<br><br>
+			<center><img src="./images/hull_texture1.jpg" width="20%"></center>
+			Quindi basta usare un solo materiale, con <k>metalness</k> al massimo, e <k>roughness</k> non troppo bassa.
+			Per assegnare la texture al modello, è stata usata la funzione di <ks>UV mapping</ks> automatico di Blender.<br>
+			Infine la mesh è stata salvata in formato .obj (Wavefront) con annesso file .mtl.
+			</li>
+		</ul>
+	</td>
+	<td style="width:50%">
+		<center><img src="./images/ShipBlender.png" alt="blender" width="50%" >
+				<img src="./images/MaterialBlender.png" alt="blender" width="50%" ></center>
+	</td>
+	</tr>
+	<tr>
+		<td style="width:50%" >
+			<ul><li><ks>Caricamento Mesh</ks><br>
+				Grazie alla funzione <k>loadMesh</k> del file <kc>load_mesh.js</kc> è sato possibile importare positions, normals, texcoords e light parameters
+				salvati nei file .obj e .mtl precedentemte definiti.<br><br>
+				Questi script si appoggiano alla libreria <kc>glm_utils.js</kc>, che converte i dati .obj in una struttura modificabile.<br><br>
+				Poichè utilizziamo un solo materiale, la gestione dei suoi parametri non è troppo complessa, visto che rimangono costanti.
+				</li>
+				<li><ks>Shaders</ks><br>
+				Il metodo di illuminazione dell'astronave, prevede l'utilizzo di tutti i parametri importati dal materiale.<br>
+				Abbiamo dunque più componenti da considerare.<br><br>
+				Il calcolo del colore del frammento (relativo alla texture) è simile a quello dei pianeti ed è sempre definito utilizzando
+				il vettore <k>surfaceToLightDirection</k>.<br>
+				Tuttavia, ora il colore della texture è modificato anche dal parametro <k>Kd (o diffuse)</k> del materiale.<br><br>
+				Per calcolare il valore di luce <ks>speculare</ks>, abbiamo anche bisogno del vettore <k>surfaceToViewDirection</k>, ovvero il vettore che collega la camera 
+				con la superficie.<br>
+				<pre>v_surfaceToView = u_viewWorldPosition - surfaceWorldPosition.xyz;</pre>
+				Infine il colore del frammento è l'unione di tutti questi parametri:
+				<pre>gl_FragColor = vec4(<br>emissive + <br>ambient * u_ambientLight + <br>effectiveDiffuse * light + <br>specular * pow(specularLight, shininess), <br>effectiveOpacity);</pre>
+				</li>
+			</ul>
+		</td>
+		<td style="width:50%">
+			<center><img src="./images/ship1.png" alt="render" width="50%" >
+			<img src="./images/ship2.png" alt="render" width="50%" ></center>
+		</td>
+		</tr>
+	</tbody>
+</table>
 
 
 <h2>Funzioni, Parametri e Guida</h2>
+<div class="remark">
+	Ora vediamo come usare l'applicazione, parleremo delle opzioni/parametri che possono essere modificati in real-time e dei comandi generali dell'astronave.
+</div>
+<h3>Parametri</h3>
+<div class="remark">
+	La <ks>GUI</ks> è stata implementata grazie alla libreria <k>dat.gui.js</k> e contiene le seguenti opzioni:
+</div>
+<ul>
+	<li><kc>orbitRadius1</kc>: Controlla il raggio dell'orbita del primo pianeta</li>
+	<li><kc>orbitRadius2</kc>: Controlla il raggio dell'orbita del secondo pianeta</li>
+	<li><kc>orbitRadius3</kc>: Controlla il raggio dell'orbita del terzo pianeta</li>
+	<li><kc>orbitSpeed1</kc>: Controlla la velocità dell'orbita del primo pianeta</li>
+	<li><kc>orbitSpeed2</kc>: Controlla la velocità dell'orbita del secondo pianeta</li>
+	<li><kc>orbitSpeed3</kc>: Controlla la velocità dell'orbita del terzo pianeta</li>
+	<li><kc>orbitSpeedMoon</kc>: Controlla la velocità dell'orbita della luna</li>
+	<li><kc>rotationSpeed1</kc>: Controlla la velocità di rotazione sul proprio asse del primo pianeta</li>
+	<li><kc>rotationSpeed2</kc>: Controlla la velocità di rotazione sul proprio asse del secondo pianeta</li>
+	<li><kc>rotationSpeed3</kc>: Controlla la velocità di rotazione sul proprio asse del terzo pianeta</li>
+	<li><kc>rotationSpeedMoon</kc>: Controlla la velocità di rotazione sul proprio asse della luna</li>
+	<li><kc>D</kc>: Se freeCam è attivo o targetShip è disattivato => controlla la distanza della camera</li>
+	<li><kc>freeCam</kc>: Permette di cambiare da visuale dietro l'astronave, a visuale dinamica</li>
+	<li><kc>targetShip</kc>: Se è attivo la visuale punta sulla nave, altrimenti sul sole.</li>
+	<li><kc>onMobile</kc>: Permette di visualizzare l'overlay di dpad per aiutare l'esperienza mobile.</li>
+	<li><kc>acc</kc>: Permette di cambiare la velocità della nave</li>
+	<li><kc>decoupled</kc>: Permette di "spegnere" i propulsori automatici che cercano di fermare la nave, simulazione effettiva di viaggio nello spazio.</li>
+</ul>
 
+<h3>Comandi</h3>
+<div class="remark">I comandi da mouse e tastiera sono stati impostati grazie agli eventi <kc>onMouse</kc> di HTML5</div>
+<ul>
+	<li><kc>W</kc>: Accelerazione in avanti</li>
+	<li><kc>S</kc>: Accelerazione indietro</li>
+	<li><kc>A</kc>: Imbardata a sinistra</li>
+	<li><kc>D</kc>: Imbardata a destra</li><br>
+	<li><kc>Arrow Up</kc>: Accelerazione in alto</li>
+	<li><kc>Arrow Down</kc>: Accelerazione in basso</li>
+	<li><kc>Arrow Left</kc>: Accelerazione a sinistra</li>
+	<li><kc>Arrow Right</kc>: Accelerazione a destra</li><br>
+	<li><kc>Mouse Click and Drag</kc>: Se freeCam=<ks>true</ks> o targetShip=<ks>false</ks>, rotazione visuale.</li>
+</ul>
 
+<div class="remark">I comandi da mobile sono stati impostati grazie agli eventi <kc>touch</kc> di HTML5</div>
+<ul>
+	Una volta attivato <k>onMobile</k>, un'overlay bianco apparirà su schermo. (Creato su un canvas 2d trasparente che si sovrappone al nostro WebGL canvas).
+	<li><kc>Left DPAD</kc>: Corrisponde ai comandi WASD definiti in precedenza</li>
+	<li><kc>Right DPAD</kc>: Corrisponde ai comandi Arrow definiti in precedenza</li>
+	<li><kc>Touch and Drag</kc>: Se freeCam=<ks>true</ks> o targetShip=<ks>false</ks>, rotazione visuale.</li>
+</ul>
 
 <h2>Sviluppi Futuri</h2>
+<ul>
+	<li><ks>Bump Mapping</ks>: Implementare Bump Mapping sui pianeti per renderli più dettagliati</li>
+	<li><ks>Multipass Shadow Mapping</ks>: Implementare un sistema di shadowing che permetta la proiezione di ombre sugli oggetti illuminati da una point light (Depth Buffer + cubeMap)</li>
+	<li><ks>Better Spaceship Controls</ks>: Aggiungere beccheggio e rollio e gestire più realisticamente il movimento.</li>
+</ul>
+
 </div>
 
  
@@ -261,8 +378,8 @@ Inoltre, usiamo <ks>mipmap</ks> visto che le dimensioni delle facce sono una pot
 
 <div >
 <hr/>
-<p>Gabriele Marconi</p>
-gabriele.marconi@studio.unibo.it
+<h4>Gabriele Marconi - gabriele.marconi@studio.unibo.it - 0000999689</h4>
+<h3><a href="https://github.com/Stikinit/procedural-solar-systems">GitHub Repository</a></h3>
 </div> 
 </body>
 </html>

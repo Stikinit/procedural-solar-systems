@@ -77,14 +77,15 @@
     varying vec2 v_texcoord;
     varying vec3 v_normal;
     varying vec3 v_surfaceToLight;
+    varying vec3 v_n;
  
 
     void main(void) {
         vec4 surfaceWorldPosition = u_world * vec4(a_position, 1.);
         gl_Position = u_projection * u_view * surfaceWorldPosition;
         v_normal = mat3(u_worldInverseTransposeMatrix) * a_normal;
-
-        v_texcoord = a_texcoord.xy*vec2(TWOPI, PI);
+        v_n = -a_normal;
+        //v_texcoord = a_texcoord.xy*vec2(TWOPI, PI); //another method for uv to sphere texcoord conversion
 
         v_surfaceToLight = u_lightWorldPosition - surfaceWorldPosition.xyz;
     }
@@ -97,12 +98,13 @@
     varying vec3 v_normal;
     varying vec3 v_surfaceToLight;
     varying vec2 v_texcoord;
+    varying vec3 v_n;
 
     // The texture.
     uniform samplerCube u_texture;
 
 
-    vec3 getSphericalTexcoord() {
+    /*vec3 getSphericalTexcoord() { // anothoer method for uv to sphere texcoord conversion
         float theta = v_texcoord.y;
         float phi = v_texcoord.x;
         vec3 unit = vec3(0,0,0);
@@ -111,20 +113,21 @@
         unit.y = cos(theta) * -1.0;
         unit.z = cos(phi) * sin(theta) * -1.0;
         return unit;
-    }
+    }*/
 
     void main(void) {
 
         vec3 normal = normalize(v_normal);
+        vec3 n = normalize(v_n);
 
         vec3 surfaceToLightDirection = normalize(v_surfaceToLight);
 
         float light = dot(normal, surfaceToLightDirection);
 
-        gl_FragColor = textureCube(u_texture, getSphericalTexcoord());
+        gl_FragColor = textureCube(u_texture, n);
 
         // Lets multiply just the color portion (not the alpha)
-        // by the light
+        // by the light and add some diffuse.
         gl_FragColor.rgb *= (light*1.1) + vec3(0.2,0.2,0.2);
         
         // Add dark blue ambient light
